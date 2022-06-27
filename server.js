@@ -9,11 +9,11 @@ const db = mysql.createConnection(
         password: '',
         database: 'company_db'
     },
-    console.log ('Connected to the company_db database')
+    console.log('Connected to the company_db database')
 );
 
 const fn = {
-    viewAllDepartments() {
+    async viewAllDepartments() {
         db.query('SELECT * FROM department', function (err, results) {
             if (err) return console.error(err);
             console.table(results);
@@ -25,7 +25,7 @@ const fn = {
             if (err) return console.error(err);
             console.table(results);
             return init();
-         })
+        })
     },
     viewAllEmployees() {
         db.query(`SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager
@@ -37,20 +37,85 @@ const fn = {
             if (err) return console.error(err);
             console.table(results);
             return init();
-         })
+        })
     },
     addNewDepartment() {
         inquirer.prompt([
             {
                 type: "input",
-                name: "new department",
-                message: "Please enter the department name you want to add" 
+                name: "newDepartment",
+                message: "Please enter the department name you want to add"
             }
-        ]) //need to find a way to pass answer into query to insert string into department_db
+        ]).then(({ newDepartment }) => {
+            console.log(newDepartment);
+            db.query(`INSERT INTO department (name) VALUES ("${newDepartment}");`, function (err, results) {
+                if (err) return console.error(err);
+                return init();
+
+            })
+        })
+        //need to find a way to pass answer into query to insert string into department_db
+    },
+    async addNewRole() {
+        const [departments] = await db.promise().query('SELECT * FROM department')
+        const departmentArray = departments.map(({ name, id }) => ({
+            name: name,
+            value: id
+        }))
+        inquirer.prompt([{
+            type: "input",
+            name: "title",
+            message: "what is the title for the new role?"
+        },{
+            type: "input",
+            name: "salary",
+            message: "the salary for the new role?"
+        }, {
+            type: "list",
+            name: "department_id",
+            message: "What is the correct department for the new role?",
+            choices: departmentArray
+
+        }])
+        .then(answers => {
+            db.promise().query(`INSERT INTO ROLE SET ?`, answers).then(() => {
+                this.viewAllRoles();
+            })
+        });
+    },
+    async updateEmployeeRole() {
+        const [employees] = await db.promise().query('SELECT * FROM employee');
+        const employeeArray = employees.map(({first_name, last_name, id}) => ({
+            name: first_name + " " + last_name,
+            value: id
+        }) )
+        const [roles] = await db.promise().query('SELECT * FROM role');
+        const roleArray = roles.map(({title, id}) => ({
+            name: title,
+            value: id
+        })) 
+        inquirer.prompt([{
+            type: "list",
+            name: "id",
+            message: "Which employee would you want to update",
+            choices: employeeArray
+        },{
+            type: "list",
+            name: "role_id",
+            message: `What is the new role?`,
+            choices: roleArray
+        }]).then(answers => {
+            // console.log("UPDATE employee SET role_id = ? WHERE id = ?")
+            db.promise().query('UPDATE employee SET role_id = ? WHERE id = ?', [answers.role_id, answers.id]).then(() => {
+                this.viewAllEmployees();
+            } )
+        })
     }
-    
-    
+
+
+
 };
+
 
 const init = () => {
     const choices = [
@@ -61,7 +126,7 @@ const init = () => {
         { name: 'Add a new role', value: 'addNewRole' },
         { name: 'Add a new employee', value: 'addNewEmployee' },
         { name: 'Update an employee role', value: 'updateEmployeeRole' },
-        { name: 'Exit', value: 'exit'},
+        { name: 'Exit', value: 'exit' },
     ];
     inquirer.prompt([
         {
