@@ -17,21 +17,21 @@ const db = mysql.createConnection(
 // wrapped all functions inside fn to call from choices array like we learned in class 
 
 const fn = {
-    async viewAllDepartments() {
+    async viewAllDepartments() { // query to view all departments
         db.query('SELECT * FROM department', function (err, results) {
             if (err) return console.error(err);
             console.table(results);
             return init();
         });
     },
-    viewAllRoles() {
+    viewAllRoles() { // query to view all roles
         db.query('SELECT title, role.id, department.name, salary FROM role JOIN department ON role.department_id = department.id', function (err, results) {
             if (err) return console.error(err);
             console.table(results);
             return init();
         })
     },
-    viewAllEmployees() {
+    viewAllEmployees() { // query to view all employees
         db.query(`SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager
         FROM employee
         LEFT JOIN employee manager on manager.id = employee.manager_id
@@ -43,7 +43,7 @@ const fn = {
             return init();
         })
     },
-    addNewDepartment() {
+    addNewDepartment() { // adds a new department to deparment table
         inquirer.prompt([
             {
                 type: "input",
@@ -60,7 +60,7 @@ const fn = {
         })
         //need to find a way to pass answer into query to insert string into department_db
     },
-    async addNewRole() {
+    async addNewRole() { // adds new role to role table 
         const [departments] = await db.promise().query('SELECT * FROM department')
         const departmentArray = departments.map(({ name, id }) => ({
             name: name,
@@ -87,7 +87,7 @@ const fn = {
             })
         });
     },
-    async updateEmployeeRole() {
+    async updateEmployeeRole() { //updates existing employee role
         const [employees] = await db.promise().query('SELECT * FROM employee');
         const employeeArray = employees.map(({first_name, last_name, id}) => ({
             name: first_name + " " + last_name,
@@ -115,7 +115,7 @@ const fn = {
             } )
         })
     },
-    async addNewEmployee() {
+    async addNewEmployee() { // Adds new employee with prompts
         const [employees] = await db.promise().query('SELECT * FROM employee')
         const employeesArray = employees.map(({first_name, last_name, id}) => ({
             name: first_name + " " + last_name,
@@ -152,7 +152,7 @@ const fn = {
             })
         });
     },
-    exit() {
+    exit() { // exits the process 
         process.exit();
     }
 
@@ -161,7 +161,7 @@ const fn = {
 
 };
 
-
+// initializer function to start prompt main menu and calls the functions wrapped in fn
 const init = () => {
     const choices = [
         { name: 'View all departments', value: 'viewAllDepartments' },
