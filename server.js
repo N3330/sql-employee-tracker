@@ -1,7 +1,10 @@
+//dependencies mysql2 and inquirer
+
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
 require('console.table');
 
+// connect to database 
 const db = mysql.createConnection(
     {
         host: 'localhost',
@@ -11,6 +14,7 @@ const db = mysql.createConnection(
     },
     console.log('Connected to the company_db database')
 );
+// wrapped all functions inside fn to call from choices array like we learned in class 
 
 const fn = {
     async viewAllDepartments() {
@@ -110,7 +114,48 @@ const fn = {
                 this.viewAllEmployees();
             } )
         })
+    },
+    async addNewEmployee() {
+        const [employees] = await db.promise().query('SELECT * FROM employee')
+        const employeesArray = employees.map(({first_name, last_name, id}) => ({
+            name: first_name + " " + last_name,
+            value: id
+        }))
+        const [roles] = await db.promise().query('SELECT * FROM role');
+        const roleArray = roles.map(({title, id}) => ({
+            name: title,
+            value: id
+        })) 
+        inquirer.prompt([{
+            type: "input",
+            name: "first_name",
+            message: "what is the new employee's first name?"
+        },{
+            type: "input",
+            name: "last_name",
+            message: "what is the new employee's last name?"
+        }, {
+            type: "list",
+            name: "role_id",
+            message: "What is the new employee's role?",
+            choices: roleArray
+
+        },{
+            type: "list",
+            name: "manager_id",
+            message: "What is the new employee's role?",
+            choices: employeesArray
+        }])
+        .then(answers => {
+            db.promise().query(`INSERT INTO employee SET ?`, answers).then(() => {
+                this.viewAllEmployees();
+            })
+        });
+    },
+    exit() {
+        process.exit();
     }
+
 
 
 
