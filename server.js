@@ -182,5 +182,5 @@ const init = () => {
         }
     ]).then((answers) => fn[answers.query]());
 };
-
+// calls my init function
 init();
